@@ -28,6 +28,18 @@ class PerceptDropbox
 
     protected $dropboxClient;
 
+    protected $sortBy = [
+        'date' => 'file_unix_timestamp',
+        'name' => 'file_name',
+        'type' => 'file_extension',
+        'size' => 'file_size'
+    ];
+
+    protected $sortOrder = [
+        'ascending' => 'asc',
+        'descending' => 'desc'
+    ];
+
     /**
      * This plugin only uses a single instance of this class, and that only uses a single instance of the PluginRef, here we create that
      */
@@ -45,6 +57,14 @@ class PerceptDropbox
      */
     public function getPluginRef() : PluginRef {
         return $this->ref;
+    }
+
+    public function getSortBy($key) : string {
+        return $key && $this->sortBy[$key] ? $this->sortBy[$key] : 'file_unix_timestamp';
+    }
+
+    public function getSortOrder($key) : string {
+        return $key && $this->sortOrder[$key] ? $this->sortOrder[$key] : 'desc';
     }
 
     public function uploadProjectDoc(int $project_id, $file) : void {
@@ -115,27 +135,25 @@ class PerceptDropbox
             $accessToken = NULL;
         }
                 
-        if(!$accessToken && !isset($_GET['code']) && !isset($_GET['state'])){
+        if(!$accessToken && !request()->has('code') && !request()->has('state')){
             $params = [];
             $urlState = null ;
 
             $tokenAccessType = "offline";
             
             $authUrl = $authHelper->getAuthUrl($callbackUrl, $params, $urlState, $tokenAccessType);
-            if(request()->input('disconnected')){
+            if(request()->has('disconnected')){
                 echo "You are now discounnected<br>";
             }
             echo "<a href='" . $authUrl . "'>Connect with Dropbox</a>";
             exit;
         }
 
-        if (!$accessToken && isset($_GET['code']) && isset($_GET['state'])) {    
-            //Bad practice! No input sanitization!
-            $code = $_GET['code'];
-            $state = $_GET['state'];
+        if (!$accessToken && request()->has('code') && request()->has('state')) {    
+            $code = request()->input('code');
+            $state = request()->input('state');
 
-            //Fetch the AccessToken
-            $authHelper->getPersistentDataStore()->set('state', filter_var($_GET['state'], FILTER_SANITIZE_STRING));
+            $authHelper->getPersistentDataStore()->set('state', filter_var($state, FILTER_SANITIZE_STRING));
             $accessToken = $authHelper->getAccessToken($code, $state, $callbackUrl);
             $this->dropboxClient->setAccessToken($accessToken->getToken());
             DB::table('percept_dropbox_access_token')->updateOrInsert([],[

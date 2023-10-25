@@ -82,13 +82,23 @@ class PluginLogic extends Plugin {
         }, 20, 2);
 
         Eventy::addFilter(Plugin::FILTER_SORT_PROJECT_FILES, function( array $all_project_files ): array {
-            //do some sorting on the array $all_project_files            
-            usort($all_project_files, function(ProjectFile $a,ProjectFile $b)  {
-                return $a <=> $b;
+            $sort_by = PerceptDropbox::getSortBy(config('percept-dropbox.files_sort_by'));
+            $sort_order = PerceptDropbox::getSortOrder(config('percept-dropbox.files_sort_order')); 
+            //dd($sort_by, $sort_order);
+            usort($all_project_files, function(ProjectFile $a,ProjectFile $b) use($sort_by, $sort_order)  {
+                $fileA = $a->toArray();
+                $fileB = $b->toArray();
+                if ($fileA[$sort_by] == $fileB[$sort_by]) {
+                    return 0;
+                } else if($sort_order === 'asc'){
+                    return $fileA[$sort_by] <=> $fileB[$sort_by];
+                } else {
+                    return $fileB[$sort_by] <=> $fileA[$sort_by];
+                }
             });
             return $all_project_files;
         }, 20, 2);
-
+        
 
         Eventy::addAction(Plugin::ACTION_BEFORE_DELETING_PROJECT_FILE, function( ProjectFile $project_file):void {
             //dd("file for project about to be deleted",['project_file'=>$project_file->toArray()]);
