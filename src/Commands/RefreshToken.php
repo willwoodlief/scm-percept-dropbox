@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
 use Kunnu\Dropbox\Models\AccessToken;
+use Percept\Dropbox\Facades\PerceptDropbox;
 
 class RefreshToken extends Command
 {
@@ -20,13 +21,14 @@ class RefreshToken extends Command
             $this->line($this->description);
             $this->newLine(1);
         } else {
+            PerceptDropbox::createTokenTableIfNotExists();
             $dropboxClient = app(DropboxClient::class);
             $authHelper = $dropboxClient->getAuthHelper();
-            $row = DB::table('percept_dropbox_access_token')->first();
+
+            $row = NULL;
             if($row){
                 $accessToken = new AccessToken(json_decode($row->token_data, true));
                 $accessToken = $authHelper->getRefreshedAccessToken($accessToken);
-
                 DB::table('percept_dropbox_access_token')->updateOrInsert([],[
                     'token_data' => json_encode($accessToken->getData()),
                     'token' => $accessToken->getToken(),

@@ -10,6 +10,7 @@ use Kunnu\Dropbox\Dropbox as DropboxClient;
 use Illuminate\Console\Scheduling\Schedule;
 use Percept\Dropbox\Commands\RefreshToken;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * This plugin uses the https://github.com/spatie/laravel-package-tools library to make the boilerplate laravel for a new service. It is optional, but makes it simpler. But regardless, the plugin needs to extend the Illuminate\Support\ServiceProvider class
@@ -51,8 +52,9 @@ class PerceptDropboxProvider extends PackageServiceProvider
             ->name('percept-dropbox')
             ->hasConfigFile()
             ->hasRoute('web')
-            ->hasMigration('create_percept_dropbox_access_token')
+            //->hasMigration('create_percept_dropbox_access_token')
             ->hasCommand(RefreshToken::class)
+            /*
             ->hasInstallCommand(function (InstallCommand $command) {
                 $command
                     ->startWith(function(InstallCommand $command) {
@@ -64,10 +66,10 @@ class PerceptDropboxProvider extends PackageServiceProvider
                     });
                 
             })
-            ->runsMigrations()
+            */
+            //->runsMigrations()
         ;
     }
-
 
     /**
      * I encapsulate all the plugin logic in this class, which inherits from the plugin class
@@ -91,13 +93,15 @@ class PerceptDropboxProvider extends PackageServiceProvider
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule) {
             $schedule->command('scm-percept-dropbox:refresh_token')
                 ->everyThreeHours()
-                ->appendOutputTo(storage_path('logs/scm-percept-dropbox.log'));         
+                ->appendOutputTo(storage_path('logs/scm-percept-dropbox.log'));
         });
-        $row = DB::table('percept_dropbox_access_token')->first();
-        if($row){
-            $dropboxClient = app(DropboxClient::class);
-            $dropboxClient->setAccessToken($row->token);
-        }
+        if (Schema::hasTable('percept_dropbox_access_token')) {            
+            $row = DB::table('percept_dropbox_access_token')->first();
+            if($row){
+                $dropboxClient = app(DropboxClient::class);                
+                $dropboxClient->setAccessToken($row->token);
+            }
+        } 
         return $this;
     }
     public function packageRegistered() : void

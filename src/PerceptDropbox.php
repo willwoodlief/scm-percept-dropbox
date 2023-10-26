@@ -9,6 +9,8 @@ use Percept\Dropbox\Models\DropboxProjectFile;
 use Kunnu\Dropbox\Dropbox as DropboxClient;
 use Illuminate\Support\Facades\DB;
 use Kunnu\Dropbox\Models\AccessToken;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
 
 //this is a facade anywhere in any code can use ScmPluginTest::logMe
 
@@ -117,10 +119,24 @@ class PerceptDropbox
 
         return $docs;
     }  
+
+    public function createTokenTableIfNotExists(){
+        if (!Schema::hasTable('percept_dropbox_access_token')) {
+            Schema::create('percept_dropbox_access_token', function (Blueprint $table) {
+                $table->id();
+                $table->json('token_data')->nullable();
+                $table->string('token', 355)->nullable();
+                $table->integer('expire_at');
+                $table->timestamps();
+            });
+        }        
+    }
     
     public function connect(){
-        
-        $callbackUrl = url('/percept-dropbox/connect');
+
+        PerceptDropbox::createTokenTableIfNotExists();
+
+        $callbackUrl = route('percept-dropbox-connect');
         $authHelper = $this->dropboxClient->getAuthHelper();
 
         $row = DB::table('percept_dropbox_access_token')->first();
@@ -171,7 +187,7 @@ class PerceptDropbox
     }
 
     public function disconnect(){
-        DB::table('percept_dropbox_access_token')->delete();
+        Schema::dropIfExists('percept_dropbox_access_token');
         return redirect(route('percept-dropbox-connect',['disconnected'=> 1]));
     }
 
