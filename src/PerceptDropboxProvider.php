@@ -52,22 +52,9 @@ class PerceptDropboxProvider extends PackageServiceProvider
             ->name('percept-dropbox')
             ->hasConfigFile()
             ->hasRoute('web')
-            //->hasMigration('create_percept_dropbox_access_token')
+            ->hasMigration('create_percept_dropbox_access_token')
             ->hasCommand(RefreshToken::class)
-            /*
-            ->hasInstallCommand(function (InstallCommand $command) {
-                $command
-                    ->startWith(function(InstallCommand $command) {
-                        $command->info('start command');
-                    })
-                    ->publishConfigFile()
-                    ->endWith(function(InstallCommand $command) {
-                        $command->info('End command execution. Have a great day!');
-                    });
-                
-            })
-            */
-            //->runsMigrations()
+            ->runsMigrations()
         ;
     }
 

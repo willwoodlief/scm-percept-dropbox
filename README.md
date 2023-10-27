@@ -9,13 +9,15 @@ see https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/pr
 ## install instructions
 1. Add this as a folder in the `/plugins` directory of your project.  
 
-2. Run `composer update kunalvarma05/dropbox-php-sdk` command.   
+2. Run `composer update kunalvarma05/dropbox-php-sdk` command.  
 
-3. Create an APP on Dropbox from here https://www.dropbox.com/developers/apps   
+3. Run `php artisan migrate --path=plugins/scm-percept-dropbox/database/migrations` command. This will create database table percept_dropbox_access_token
 
-4. You have to add `https://{your-domain.com}/percept-dropbox/connect` as a Redirect URI in your Dropbox APP under OAuth 2 Redirect URIs.  
+4. Create an APP on Dropbox from here https://www.dropbox.com/developers/apps. You can further read below section "Steps to create a Dropbox APP" for detailed guide on how you can create a Dropbox APP.  
 
-5. In your laravel environment file, please add following key  
+5. You must have to add `https://{your-domain.com}/percept-dropbox/connect` as a Redirect URI in your Dropbox APP under OAuth 2 Redirect URIs.  
+
+6. In your laravel environment file, please add following key  
 
 * `PERCEPT_DROPBOX_CLIENT_ID={replace_this_with_your_dropbox_App_key}`
 
@@ -27,23 +29,23 @@ For sorting file list you can add following
 
 * `PERCEPT_DROPBOX_FILES_SORT_ORDER="descending"` Here you can use any one possible value from this [ascending, descending]  
 
-8. Once you have added above settings in your project env file. Please visit `https://{your-domain.com}/percept-dropbox/connect` and from here click on the link `Connect with Dropbox`.  
+7. Once you have added above settings in your project env file. Please visit `https://{your-domain.com}/percept-dropbox/connect` and from here click on the link `Connect with Dropbox`.  
 
-9. You will be redirected to oAuth login url of Dropbox. From here you have to click on `Continue` and then have to click on `Allow` button.  
+8. You will be redirected to oAuth login url of Dropbox. From here you have to click on `Continue` and then have to click on `Allow` button.  
 
-10. Once you allow access, you will get connected page saying "You are now connected with Dropbox. You can now close this window."  
-
-
-At this point you have got dropbox authentication token saved on DB table percept_dropbox_access_token. This token will be used for making Dropbox API call.  
+9. Once you allow access, you will get connected page saying "You are now connected with Dropbox. You can now close this window."  
 
 
-This plugin will ensure authentication token will get refreshed every 3 hours using schedule task that eventually run a command `scm-percept-dropbox:refresh_token`.    
+At this point you have got dropbox authentication token saved on your DB table percept_dropbox_access_token. This token will be used for making a Dropbox API call.  
+
+
+This plugin will ensure authentication token will get refreshed every 3 hours using schedule task that eventually run a command `scm-percept-dropbox:refresh_token`. If you haven't setup scheduler for your Laravel project, you can setup it as guided here https://laravel.com/docs/10.x/scheduling#running-the-scheduler    
 
 
 You have now setup and linked your Dropbox storage. Try uploading a project file now.
 
-## Steps to create Dropbox APP
-1. Visit the Dropbox App Console.
+## Steps to create a Dropbox APP
+1. Visit the Dropbox App Console https://www.dropbox.com/developers/apps. 
 2. Click the Create app button.
 3. Under Choose an API section, select Scoped Access.
 4. Under Choose the type of access you need, select Full Dropbox.

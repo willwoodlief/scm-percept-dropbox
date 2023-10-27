@@ -21,11 +21,10 @@ class RefreshToken extends Command
             $this->line($this->description);
             $this->newLine(1);
         } else {
-            PerceptDropbox::createTokenTableIfNotExists();
             $dropboxClient = app(DropboxClient::class);
             $authHelper = $dropboxClient->getAuthHelper();
 
-            $row = NULL;
+            $row = DB::table('percept_dropbox_access_token')->first();
             if($row){
                 $accessToken = new AccessToken(json_decode($row->token_data, true));
                 $accessToken = $authHelper->getRefreshedAccessToken($accessToken);
