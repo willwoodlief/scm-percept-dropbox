@@ -29,6 +29,10 @@ For sorting file list you can add following
 
 * `PERCEPT_DROPBOX_FILES_SORT_ORDER="descending"` Here you can use any one possible value from this [ascending, descending]  
 
+For setting upload folder on your Dropbox account you can add following
+
+* `PERCEPT_DROPBOX_DOCUMENTS_UPLOAD_FOLDER="pathto/your/folder/onDropbox"` default is `uploads/projects`
+
 7. Once you have added above settings in your project env file. Please visit `https://{your-domain.com}/percept-dropbox/connect` and from here click on the link `Connect with Dropbox`.  
 
 8. You will be redirected to oAuth login url of Dropbox. From here you have to click on `Continue` and then have to click on `Allow` button.  
