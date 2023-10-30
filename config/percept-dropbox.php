@@ -4,4 +4,5 @@ return [
     'client_secret' => env('PERCEPT_DROPBOX_CLIENT_SECRET',''),
     'files_sort_by' => env('PERCEPT_DROPBOX_FILES_SORT_BY',''),
     'files_sort_order' => env('PERCEPT_DROPBOX_FILES_SORT_ORDER','descending'),
+    'upload_folder' => env('PERCEPT_DROPBOX_DOCUMENTS_UPLOAD_FOLDER','uploads/projects')
 ];

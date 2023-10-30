@@ -75,7 +75,9 @@ class PerceptDropbox
                 'mode' => 'add',
                 'autorename' => false
             ];
-            $this->dropboxClient->upload($file, '/uploads/projects/'.$project_id.'/documents/'.$file->getClientOriginalName(), $param);
+            $folder = config('percept-dropbox.upload_folder');
+            $folder = '/' . trim($folder, '/') . '/' . $project_id;
+            $this->dropboxClient->upload($file, $folder . '/' . $file->getClientOriginalName(), $param);
         }catch(Exception $e){
             Log::error($e->getMessage());
         }
@@ -101,9 +103,10 @@ class PerceptDropbox
 
     public function getProjectDocs(int $project_id) : array {
         $docs = [];
-        try{
-            
-            $response = $this->dropboxClient->listFolder('/uploads/projects/'.$project_id.'/documents');
+        try{   
+            $folder = config('percept-dropbox.upload_folder');
+            $folder = '/' . trim($folder, '/') . '/' . $project_id;         
+            $response = $this->dropboxClient->listFolder($folder);
             do{
                 foreach($response->getItems() as $file){
                     $docs[] = new DropboxProjectFile($file->getData());
@@ -132,7 +135,10 @@ class PerceptDropbox
             $accessToken = new AccessToken(json_decode($row->token_data, true));
             if($accessToken && $expire_at && $expire_at > time() + (5*60) ){
                 $this->dropboxClient->setAccessToken($accessToken->getToken());
-            } 
+            } else if($expire_at < time() + (5*60) && !request()->has('code') && !request()->has('state')){
+                echo "Token is expired.... Please re-connect your Dropbox by clicking below link<br>";
+                $accessToken = NULL;
+            }
         } else {
             $accessToken = NULL;
         }
