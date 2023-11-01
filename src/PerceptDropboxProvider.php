@@ -7,11 +7,10 @@ use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 use Kunnu\Dropbox\DropboxApp;
 use Kunnu\Dropbox\Dropbox as DropboxClient;
-use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Route;
+use Illuminate\Console\Scheduling\Schedule;
+use Percept\Dropbox\Commands\RefreshToken;
 use Illuminate\Support\Facades\DB;
-use Kunnu\Dropbox\Models\AccessToken;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * This plugin uses the https://github.com/spatie/laravel-package-tools library to make the boilerplate laravel for a new service. It is optional, but makes it simpler. But regardless, the plugin needs to extend the Illuminate\Support\ServiceProvider class
@@ -49,37 +48,15 @@ class PerceptDropboxProvider extends PackageServiceProvider
          *
          * More info: https://github.com/spatie/laravel-package-tools
          */
-        //$package->publishableProviderName = 'PerceptDropboxServiceProvider';
         $package
             ->name('percept-dropbox')
-            //->hasViews(static::VIEW_BLADE_ROOT)
-            //->publishesServiceProvider('PerceptDropboxServiceProvider')
-            //->hasViews(static::VIEW_BLADE_ROOT)
+            ->hasConfigFile()
             ->hasRoute('web')
-            //->hasAssets()
             ->hasMigration('create_percept_dropbox_access_token')
-            /*
-            ->hasInstallCommand(function (InstallCommand $command) {
-                $command
-                    ->startWith(function(InstallCommand $command) {
-                        $command->info('start command');
-                    })
-                    //->publishConfigFile()
-                    //->publishAssets()
-                    ->publishMigrations()
-                    //->copyAndRegisterServiceProviderInApp()
-                    ->endWith(function(InstallCommand $command) {
-                        $command->info('End command execution. Have a great day!');
-                    });
-                //$command->info($package->publishableProviderName."-".$package->shortName());
-                //$command->comment($package->publishableProviderName."-".$package->shortName());
-                
-            })
-            */
+            ->hasCommand(RefreshToken::class)
             ->runsMigrations()
         ;
     }
-
 
     /**
      * I encapsulate all the plugin logic in this class, which inherits from the plugin class
@@ -99,41 +76,27 @@ class PerceptDropboxProvider extends PackageServiceProvider
     {
         $this->plugin_logic = new PluginLogic();
         $this->plugin_logic->initialize();
-        
-        $row = DB::table('percept_dropbox_access_token')->first();
-        if($row){
-            $expire_at = $row->expire_at;
-            $accessToken = new AccessToken(json_decode($row->token_data, true));
-            if(request()->input('disconnected') != '1'){
-                $dropboxClient = $this->app->make(DropboxClient::class);
-                if($accessToken && (!$expire_at || $expire_at <= time() + (5*60))){
-                    $authHelper = $dropboxClient->getAuthHelper();
-                    $accessToken = $authHelper->getRefreshedAccessToken($accessToken);
 
-                    DB::table('percept_dropbox_access_token')->updateOrInsert([],[
-                        'token_data' => json_encode($accessToken->getData()),
-                        'token' => $accessToken->getToken(),
-                        'expire_at' => time() + $accessToken->getExpiryTime()
-                    ]);
-                    //Log::debug("existing token expired, using refreshed token",['new accessToken'=>$accessToken->getToken(), 'expire' => time() + $accessToken->getExpiryTime()]);
-                    $dropboxClient->setAccessToken($accessToken->getToken());
-                } else if($accessToken){
-                    //Log::debug("existing token alive, using existing token",['accessToken'=>$accessToken->getToken(), 'expire' => $expire_at]);
-                    $dropboxClient->setAccessToken($accessToken->getToken());
-                }
-            } else {
-                //Log::debug("Dropbox is disconnected");
+        $this->callAfterResolving(Schedule::class, function (Schedule $schedule) {
+            $schedule->command('scm-percept-dropbox:refresh_token')
+                ->everyThreeHours()
+                ->appendOutputTo(storage_path('logs/scm-percept-dropbox.log'));
+        });
+        if (Schema::hasTable('percept_dropbox_access_token')) {            
+            $row = DB::table('percept_dropbox_access_token')->first();
+            if($row){
+                $dropboxClient = app(DropboxClient::class);                
+                $dropboxClient->setAccessToken($row->token);
             }
-        }
+        } 
         return $this;
     }
     public function packageRegistered() : void
     {
         $this->app->singleton(DropboxClient::class, function () {
 
-            $dropboxApp = new DropboxApp(env('DROPBOX_APP_KEY'), env('DROPBOX_APP_SECRET'));
+            $dropboxApp = new DropboxApp(config('percept-dropbox.client_id'), config('percept-dropbox.client_secret'));
             $dropboxClient = new DropboxClient( $dropboxApp );
-            
             return $dropboxClient;
         });
     }

@@ -50,7 +50,7 @@ class DropboxProjectFile extends ProjectFile {
 
         $this->file_unix_timestamp = $dateTime->getTimestamp();
         $this->file_date = $dateTime->format('F j, Y');
-        $this->downloadable_from_this_server = $file['is_downloadable']; //todo, we will make true once we got download link of Dropbox file
+        $this->downloadable_from_this_server = $file['is_downloadable']; 
         $this->full_file_path = $file['path_display'];
     }
 
